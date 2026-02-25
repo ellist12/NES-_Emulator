@@ -1,3 +1,5 @@
+use std::io;
+
 use crate::{bus::Bus, cpu::Cpu};
 
 mod cpu;
@@ -9,9 +11,12 @@ fn main() {
     bus.load_rom("Excitebike (Japan, USA).nes");
     let mut cpu = Cpu::new();
     cpu.reset(&mut bus);
-    println!("{:?}", cpu);
+
+    let mut input = String::new();
 
     for i in 0..100 {
+        io::stdin().read_line(&mut input).unwrap();
         cpu.step(&mut bus);
+        println!("{:?}", cpu);
     }
 }
