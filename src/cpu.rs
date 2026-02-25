@@ -1,6 +1,7 @@
+use std::fmt;
+
 use crate::bus::Bus;
 
-#[derive(Debug)]
 pub struct Cpu {
     // Register Utama
     a: u8, // Accumulator
@@ -11,6 +12,20 @@ pub struct Cpu {
     sp: u8,    // Special Register
     pc: u16,   // Program Counter
     status: u8 // Status register
+}
+
+// Bikin format debug cpu custom, biar bisa nampilin binary nya
+impl fmt::Debug for Cpu {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Cpu")
+         .field("a", &format_args!("{:08b}", self.a))
+         .field("x", &format_args!("{:08b}", self.x))
+         .field("y", &format_args!("{:08b}", self.y))
+         .field("sp", &format_args!("{:08b}", self.sp))
+         .field("pc", &format_args!("{:016b}", self.pc))
+         .field("y", &format_args!("{:08b}", self.status))
+         .finish()
+    }
 }
 
 impl Cpu {

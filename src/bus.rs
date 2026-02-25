@@ -1,6 +1,6 @@
 use std::{fs::File, io::Read};
 
-use crate::cartridge::{self, Cartridge};
+use crate::{cartridge::{self, Cartridge}, ppu::Ppu};
 
 pub struct Bus {
     //ram

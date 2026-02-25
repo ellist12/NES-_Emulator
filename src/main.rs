@@ -4,11 +4,12 @@ use crate::{bus::Bus, cpu::Cpu};
 
 mod cpu;
 mod bus;
+mod ppu;
 mod cartridge;
 
 fn main() {
     let mut bus = Bus::new();
-    bus.load_rom("Excitebike (Japan, USA).nes");
+    bus.load_rom("Donkey Kong (JU) [T-Span].nes");
     let mut cpu = Cpu::new();
     cpu.reset(&mut bus);
 

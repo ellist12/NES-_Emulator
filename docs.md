@@ -61,18 +61,54 @@ Struktur Hardware NES :
         - PPUCTRL (Write Only)
           Ini adalah tempat CPU memberi tahu bagaimana PPU harus bersikap. Diakses oleh CPU dengan menulis ke alamat 0x2000. Register ini berukuran 8 bit dengan deskripsi bit
           sebagai berikut : 
-             - Bit 7 (V) : NMI Enable, untuk mengaktifkan NMI (*Non Maskable Interrupt*). Jika bit ini aktif, maka GPU bisa mengirim Non Maskable Interrupt ke CPU.
-             - Bit 6 (P) : PPU Master / Slave, Ini adalah sistem untuk hardware yang punya 2 PPU, biar 2 PPU nya bisa bekerja sama untuk menghasilkan sebuah gambar di TV
-                           NES hanya punya 1 buah PPU, sehingga fitur ini gak dipake
-             - Bit 5 (H) : Ukuran Sprite (0: 8x8 pixel, 1: 8x16 pixel). Di dalam NES, ada aturan bahwa 
-             - Bit 4 (B) : Background Tile Select, Alamat pattern table background (0: $0000, 1: $1000)
+             - Bit 7 (V)    : NMI Enable, untuk mengaktifkan NMI (*Non Maskable Interrupt*). Jika bit ini aktif, maka GPU bisa mengirim Non Maskable Interrupt ke CPU.
+             - Bit 6 (P)    : PPU Master / Slave, Ini adalah sistem untuk hardware yang punya 2 PPU, biar 2 PPU nya bisa bekerja sama untuk menghasilkan sebuah gambar di TV
+                              NES hanya punya 1 buah PPU, sehingga fitur ini gak dipake
+             - Bit 5 (H)    : Ukuran Sprite (0: 8x8 pixel, 1: 8x16 pixel). Di dalam NES, ada aturan bahwa dalam satu horizontal line, hanya boleh ada maximal 8 sprite.
+                              Untuk karakter, biasanya developer butuh 2 sprite 8x8 untuk membuat karakter yang agak besar. Oleh karena itulah ada ukuran sprite 8x16. Agar
+                              NES hanya menganggap 2 sprite 8x8 karakter itu hanya sebagai satu sprite 8x16
+             - Bit 4 (B)    : Background Tile Select, Alamat pattern table background (0: $0000, 1: $1000). Jadi di NES, pattern table di CHR-ROM (Cartridge), itu ada dibagi jadi 2 : 
+                              Ada halaman kiri dan halaman kanan, biasanya satu halaman diisi full untuk sprite, satu halaman lagi diisi full untuk background. Nah bit ini tuh buat nentuin
+                              backgroundnya ada di halaman kiri apa kanan
+             - Bit 3 (S)    : Sprite Tile Select, alamat pattern table sprite (0: $0000, 1: $1000). Sama seperti background tile select, tapi untuk yang halaman sprite
+             - Bit 2 (I)    : Increment Mode, Penambahan alamat vram otomatis (0: +1, 1: +32). Satu baris layar NES terdiri dari 32 ubin (tiles) secara horizontal.
+                              value 0 dipakai jika kita ingin increment / mengisi data dari kiri ke kanan. Sedangkan +32 dipakai untuk increment / mengisi data dari atas ke bawah
+             - Bit 1-0 (NN) : NN (Nametable Select), untuk memilih *nametable* utama ($00=$2000, $01=$2400, $02=$2800, $03=$2C00). Di nes kita hanya punya 2 nametable, karena ukuran vram 
+                              hanya 2KB, jadi cuma bisa milih 00 dan 01
         - PPUMASK (Write Only)
-          Digunakan untuk filter layar, bisa digunakan untuk menyalakan atau mematikan render background dan sprite. Diakses oleh CPU
-          dengan menulis ke alamat 0x2001
+          Digunakan untuk filter layar, bisa digunakan untuk menyalakan atau mematikan render background dan sprite. Register ini digunakan untuk mengatur segala hal yang
+          sifatnya visual. Diakses oleh CPU dengan menulis ke alamat 0x2001. Register ini berukuran 8 bit dengan deskripsi bit sebagai berikut : 
+             - Bit 7 (B)    : Blue, menekankan warna biru
+             - Bit 6 (G)    : Green, menekankan warna hijau
+             - Bit 5 (R)    : Red, menekankan warna merah
+             - Bit 4 (S)    : Sprites, tampilkan sprites ? (0: sembunyikan, 1: tampilkan)
+             - Bit 3 (b)    : Background, tampilkan background ? (0: sembunyikan, 1: tampilkan)
+             - Bit 2 (M)    : Sprite Left, tampilkan sprite di 8 pixel paling kiri layar ? (0: sembunyikan, 1: tampilkan)
+             - Bit 1 (m)    : BG Left, tampilkan background di 8 pixel paling kiri layar ? (0: sembunyikan, 1: tampilkan)
+             - Bit 0 (Gr)   : Grayscale, mode hitam putih ? (0: warna, 1: grayscale)
+          Bit 5 - 7 : Ini digunakan untuk filter warna di NES, jika misal, bit 5 diisi value 1, sedangkan bit 6 dan 7 diisi 0, NES akan membuat warna merah lebih terang dan warna lain
+                      lebih gelap, sehingga dominan kayak ada filter merahnya. Biasa dipakai saat semisal player kena damage, lalu screen kedip merah
+          Bit 4 - 3 : Ini digunakan untuk menampilkan / menyembunyikan sprite, jika misal, bit 4 value nya 0, maka semua sprite, termasuk player dan musuh akan tak nampak, begitu pula dengan
+                      bit background.
+          Bit 2 - 1 : Memungkinkan programmer untuk menyembunyikan 8 bit pixel pertama di kolom paling kiri. Kenapa harus disembunyikan? Karena saat layar bergeser, seringkali muncul glitch di 
+                      pinggiran layar, karena data tile baru belum dimuat sempurna. Dengan mematikan ini, programmer bisa menutup cacat tersebut
+          Bit 0     : Grayscale mode, untuk membuat gambar jadi full hitam putih
         - PPUSTATUS (Read Only)
-          Digunakan oleh CPU untuk mengetahui kondisi PPU. Diakses oleh CPU dengan membaca ke address 0x2002
+          Digunakan oleh CPU untuk mengetahui kondisi PPU. Diakses oleh CPU dengan membaca ke address 0x2002. Di register inilah PPU menuliskan statusnya agar bisa dibaca oleh CPU. Register ini
+          berukuran 8 bit dan berisi hal hal sebagai berikut: 
+             - Bit 7       : V-Blank flag. Jika valuenya 1, maka PPU sudah selesai menggambar baris terakhir dan mulai masuk ke masa istirahat/ *v-blank*. CPU akan membaca register ini 
+                             terus menerus dalam looping (polling) untuk menunggu waktu yang aman untuk mengupdate grafis
+             - Bit 6       : Sprite 0 hit. Bit ini dipakai sebagai trik oleh programmer, untuk membuat status bar dari sebuah game tetap diam, walaupun map game bisa scrolling / sedang bergerak
+                             Contoh : Misal di game mario, di baris atas kan ada status bar kan, yang isinya ada nama, skor, jumlah koin, time, world ke berapa dll. Nah saat PPU menggambar,
+                             awalnya value dari scroll akan di set ke 0 oleh CPU (agar HUD nya gk ikut gerak scrolling saat player gerak ke kanan kiri). Nah saat si PPU sampai di
+                             bagian ngegambar si sprite 0 (misal di line 30). Bit 6 di PPUSTATUS akan menyala (value nya 1), hal ini bisa dibaca oleh CPU yang menandakan bahwa baris ini adalah
+                             baris terakhir dimana HUD digambar, dan baris terakhir dimana value scroll dibikin 0, untuk selanjutnya, value scroll bisa di set ke 100 misalnya, agar sprite dan background dibawah line 30 ini bisa bergerak ke kanan / kiri mengikuti posisi player
+                             ini, 
+             - Bit 5       : Sprite overflow. NES punya limitasi bahwa di satu garis yang sejajar secara horizontal, maksimal hanya boleh 8 sprite per baris. Lebih dari itu, grafiknya sprite 
+                             akan ngeglitch. Nah jika ada lebih dari 8 sprite per baris horizontal, bit ini akan punya value 1
+             - Bit 0 - 4   : Garbage bit, bit ini tidak dipakai di NES, jadi bisa diabaikan
         - OAMADDR (Write Only)
-          PPU memiliki memori khusus untuk sprite bernama OAM (Object Attribute Memory). Register ini digunakan untuk menentukan alamat 
+          PPU memiliki memori khusus untuk sprite bernama *OAM* (Object Attribute Memory). Register ini digunakan untuk menentukan alamat 
           mana di dalam OAM yang ingin diakses. Diakses oleh CPU dengan menulis ke address 0x2003
         - OAMDATA (Read / Write)
         - PPUSCROLL (Write Only - Twice)
@@ -238,3 +274,31 @@ Struktur Hardware NES :
   
   V-Blank ini adalah waktu yang penting, karena inilah waktu yang aman bagi CPU untuk mengirim data grafis baru ke PPU dengan aman. Karena kalau CPU mengirim data grafis 
   PPU saat tidak dalam waktu V-Blank, gambar yang dihasilkan akan terlihat ngeglitch
+
+#### Nametable
+  Nametable adalah peta / kanvas yang memberi tahu PPU ubin mana yang harus diletakkan pada layar. Satu layer NES memiliki resolusi 256 x 240 pixel. Karena satu ubin berukuran 8x8 pixel,
+  maka satu nametable terdiri dari : 
+    - 32 Kolom horizontal 
+    - 30 baris vertikal
+  
+  Kenapa ada 4 nametable ($2000, $2400, $2800, $2C00) ?
+  
+  NES dirancang untuk game yang layarnya bisa jalan (scrolling). agar transisi layar terlihat mulus, PPU menyediakan ruang untuk menyimpan lebih dari satu layar sekaligus.
+  Misal kita punya 4 lembar kertas yang disusun menjadi kotak besar 2x2:
+    - $2000 (00) Layar utama (kiri atas)
+    - $2400 (01) Layar sebelah kanan (kanan atas)
+    - $2800 (10) Layar sebelah bawah (kiri bawah)
+    - $2C00 (11) Layar pojok kanan bawah (kanan bawah)
+    
+  Cuman untuk kasusnya NES, dia hanya punya 2 nametable (atas kiri, atas kanan), dan 2 nametable setelahnya akan mirroring ke nametable atas kiri dan atas kanan.
+    
+#### OAM
+  Apa itu OAM? OAM adalah singkatan dari Object Attribute Memory. Ini adalah memori khusus dalam PPU (sebesar 256 byte) yang hanya berisi data tentang 64 sprite yang akan muncul di layar.
+  Setiap sprite butuh 4 byte data: 
+    - Byte 0 : Posisi Y (atas / bawah)
+    - Byte 1 : Index Tile (Gambar apa yang diambil dari bank karakter).
+    - Byte 2 : Atribut (warna, prioritas, apakah gambarnya dibalik secara horizontal / vertikal)
+    - Byte 3 : Posisi X (Kiri / Kanan)
+    
+    
+  
