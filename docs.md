@@ -299,6 +299,6 @@ Struktur Hardware NES :
     - Byte 1 : Index Tile (Gambar apa yang diambil dari bank karakter).
     - Byte 2 : Atribut (warna, prioritas, apakah gambarnya dibalik secara horizontal / vertikal)
     - Byte 3 : Posisi X (Kiri / Kanan)
-    
+    file:///home/mochamocha/Downloads/Donkey Kong (JU) %5BT-Span%5D.nes
     
   
