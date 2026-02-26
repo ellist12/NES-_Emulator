@@ -90,6 +90,16 @@ impl Cpu {
                 self.a = self.a & param;
                 self.update_zero_and_negative_flags(self.a);
             }
+            0x88 => {
+                // DEY : Decrease Y Register, kurangi nilai di register y sebesar 1
+                // Ukuran Opcode : 1 byte
+                // Contoh kode assembly : DEY
+                // Artinya : Kurangi nilai di register Y sebesar 1
+                self.y = self.y.wrapping_sub(1);
+                self.pc += 1;
+                println!("DEY");
+                self.update_zero_and_negative_flags(self.y);
+            }
             0x91 => {
                 // STA (Indirect), Y : Lihat angka di alamat ram ZEROPAGE yang ditunjuk oleh byte berikutnya,
                 //                     baca 2 byte dari alamat itu untuk mendapatkan sebuah alamat baru,
@@ -116,7 +126,7 @@ impl Cpu {
             0x9A => {
                 // TXS: Transfer X to Stack Pointer
                 // Pindah data dari register X ke stack pointer
-                println!("TSX");
+                println!("TXS");
                 self.sp = self.x;
             }
             0x84 => {
@@ -208,7 +218,8 @@ impl Cpu {
             }
             0xF0 => {
                 // BEQ (Branch if Equal/ Branch if Zero)
-                // Melompat ke baris kode lain jika hasil operasi sebelumnya adalah 0, jumlah lompatan tergantung dengan 1 byte berikutnya
+                // Melompat ke baris kode lain jika hasil operasi sebelumnya adalah 0, jumlah lompatan tergantung dengan 1 byte berikutnya.
+                // Untuk BEQ angka di 1 byte berikutnya harus kita konversi dulu menjadi signed integer i8 sebelum kita operasikan
                 // Ukuran Opcode : 2 byte
                 // Contoh kode assembly : BEQ $05
                 // Artinya : Jika bit flag zero di register status == 1, lompat 5 byte kedepan
@@ -216,8 +227,9 @@ impl Cpu {
                 println!("BEQ {:x}", bytes_to_jump);
                 self.pc += 1;
 
-                if (self.status & 0b00000010) == 1 {
-                    self.pc = self.pc.wrapping_add_signed(bytes_to_jump as i16);
+                if (self.status & 0b00000010) != 0 {
+                    let offset = bytes_to_jump as i8;
+                    self.pc = self.pc.wrapping_add_signed(offset as i16);
                 }
             }
             _ => {
