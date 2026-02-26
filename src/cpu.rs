@@ -23,7 +23,7 @@ impl fmt::Debug for Cpu {
          .field("y", &format_args!("{:08b} [{}] [${:x}]", self.y, self.y, self.y))
          .field("sp", &format_args!("{:08b} [{}] [${:x}]", self.sp, self.sp, self.sp))
          .field("pc", &format_args!("{:016b} [{}] [${:x}]", self.pc, self.pc, self.pc))
-         .field("y", &format_args!("{:08b} [{}] [${:x}]", self.status, self.status, self.status))
+         .field("status", &format_args!("{:08b} [{}] [${:x}]", self.status, self.status, self.status))
          .finish()
     }
 }
@@ -77,11 +77,15 @@ impl Cpu {
                 self.status = self.status | 0b00001000;
             }
             0x29 => {
-                // AND
+                // AND Immidiate
                 // Lakukan operasi logic AND antara nilai di register A dan
-                // angka yang kamu tentukan, hasilnya dimasukan ke register A
+                // angka di byte berikutnya, hasilnya dimasukan ke register A
+                // Ukuran Opcode : 2 byte
+                // Contoh kode assembly : AND #$80
+                // Artinya : lakukan operasi biner AND, antara value di register A dan value di byte berikutnya,
+                //           lalu masukkan hasilnya ke register a
                 let param = bus.read(self.pc);
-                println!("AND {:x}", param);
+                println!("AND #${:x}", param);
                 self.pc += 1;
                 self.a = self.a & param;
                 self.update_zero_and_negative_flags(self.a);
@@ -102,8 +106,19 @@ impl Cpu {
                 self.pc += 1;
 
                 let addr = (hi << 8) | lo;
-                println!("STA {:x}", addr);
+                println!("STA ${:x}", addr);
                 bus.write(addr, self.a);
+            }
+            0xA0 => {
+                // LDY Immideate: Ambil byte berikutnya, taruh di register Y
+                // Ukuran Opcode : 2 byte
+                // Contoh kode assembly : LDY #$10 [A0 10]
+                // Artinya : ambil angka di byte berikutnya (10), dan masukkan ke register Y
+                let param = bus.read(self.pc);
+                self.pc += 1;
+                self.y = param;
+                println!("LDY #${:x}", param);
+                self.update_zero_and_negative_flags(self.y);
             }
             0xA2 => {
                 // LDX Immideate: Ambil byte berikutnya, taruh di register X
@@ -113,7 +128,7 @@ impl Cpu {
                 let param = bus.read(self.pc);
                 self.pc+=1;
                 self.x = param;
-                println!("LDX {:x}", param);
+                println!("LDX #${:x}", param);
                 self.update_zero_and_negative_flags(self.x);
             }
             0xA5 => {
@@ -161,7 +176,7 @@ impl Cpu {
                 // Melompat ke baris kode lain jika hasil operasi sebelumnya adalah 0, jumlah lompatan tergantung dengan 1 byte berikutnya
                 // Ukuran Opcode : 2 byte
                 // Contoh kode assembly : BEQ $05
-                // Artinya : Jika bit flag zero di register status == 0, lompat 5 byte kedepan
+                // Artinya : Jika bit flag zero di register status == 1, lompat 5 byte kedepan
                 let bytes_to_jump = bus.read(self.pc);
                 println!("BEQ {:x}", bytes_to_jump);
                 self.pc += 1;
