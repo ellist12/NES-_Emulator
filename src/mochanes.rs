@@ -6,7 +6,6 @@ use crate::{bus::Bus, cartridge::Cartridge, cpu::Cpu, ppu::Ppu};
 pub struct MochaNES {
     cpu: Cpu,
     bus: Bus,
-    ppu: Ppu
 }
 
 impl MochaNES {
@@ -14,7 +13,6 @@ impl MochaNES {
         MochaNES {
             cpu: Cpu::new(),
             bus: Bus::new(),
-            ppu: Ppu::new()
         }
     }
 
