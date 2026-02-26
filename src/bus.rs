@@ -5,8 +5,8 @@ use crate::{cartridge::{self, Cartridge}, ppu::Ppu};
 pub struct Bus {
     //ram
     ram: [u8; 2048],
-
     //ppu (Picture Processing Unit)
+    ppu: Ppu,
     //apu (Audio Processing Unit)
     //rom 
     cartridge: Option<Cartridge>
@@ -17,6 +17,7 @@ impl Bus {
     pub fn new() -> Self {
         Bus {
             ram: [0; 2048],
+            ppu: Ppu::new(),
             cartridge: None
         }
     }
@@ -71,7 +72,7 @@ impl Bus {
                 self.ram[addr as usize & 0x07FF]
             },
             0x2000..=0x2007 => { // PPU Register
-                //TODO
+                // self.ppu.handle_opcode(addr);
                 0
             },
             0x2008..=0x3FFF => { // PPU Register mirror

@@ -14,16 +14,16 @@ pub struct Cpu {
     status: u8 // Status register
 }
 
-// Bikin format debug cpu custom, biar bisa nampilin binary nya
+// // Bikin format debug cpu custom, biar bisa nampilin binary nya
 impl fmt::Debug for Cpu {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Cpu")
-         .field("a", &format_args!("{:08b}", self.a))
-         .field("x", &format_args!("{:08b}", self.x))
-         .field("y", &format_args!("{:08b}", self.y))
-         .field("sp", &format_args!("{:08b}", self.sp))
-         .field("pc", &format_args!("{:016b}", self.pc))
-         .field("y", &format_args!("{:08b}", self.status))
+         .field("a", &format_args!("{:08b} [{}] [${:x}]", self.a, self.a, self.a))
+         .field("x", &format_args!("{:08b} [{}] [${:x}]", self.x, self.x, self.x))
+         .field("y", &format_args!("{:08b} [{}] [${:x}]", self.y, self.y, self.y))
+         .field("sp", &format_args!("{:08b} [{}] [${:x}]", self.sp, self.sp, self.sp))
+         .field("pc", &format_args!("{:016b} [{}] [${:x}]", self.pc, self.pc, self.pc))
+         .field("y", &format_args!("{:08b} [{}] [${:x}]", self.status, self.status, self.status))
          .finish()
     }
 }
