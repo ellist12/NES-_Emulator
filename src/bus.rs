@@ -94,6 +94,7 @@ impl Bus {
         }
     }
 
+    // Function untuk set cartridge, digunakan oleh struct mochanes setelah load ROM
     pub fn set_cartridge(&mut self, cartridge: Cartridge) {
         self.cartridge = Some(cartridge);
     }

@@ -67,11 +67,13 @@ impl Cpu {
             0x78 => {
                 // SEI (Set Interrupt Flag)
                 // Nyalakan bit flag interrupt di status (0b00000100)
+                println!("SEI");
                 self.status = self.status | 0b00000100;
             }
             0xD8 => {
                 // CLD (Clear Decimal Mode)
                 // Nyalakan bit flag decimal mode di status (0b00001000)
+                println!("CLD");
                 self.status = self.status | 0b00001000;
             }
             0x29 => {
@@ -79,7 +81,7 @@ impl Cpu {
                 // Lakukan operasi logic AND antara nilai di register A dan
                 // angka yang kamu tentukan, hasilnya dimasukan ke register A
                 let param = bus.read(self.pc);
-                println!("AND Param : {:x}", param);
+                println!("AND {:x}", param);
                 self.pc += 1;
                 self.a = self.a & param;
                 self.update_zero_and_negative_flags(self.a);
@@ -87,6 +89,7 @@ impl Cpu {
             0x9A => {
                 // TXS: Transfer X to Stack Pointer
                 // Pindah data dari register X ke stack pointer
+                println!("TSX");
                 self.sp = self.x;
             }
             0x8D => {
@@ -99,7 +102,7 @@ impl Cpu {
                 self.pc += 1;
 
                 let addr = (hi << 8) | lo;
-                println!("STA Addr: {:x}", addr);
+                println!("STA {:x}", addr);
                 bus.write(addr, self.a);
             }
             0xA2 => {
@@ -110,6 +113,7 @@ impl Cpu {
                 let param = bus.read(self.pc);
                 self.pc+=1;
                 self.x = param;
+                println!("LDX {:x}", param);
                 self.update_zero_and_negative_flags(self.x);
             }
             0xA5 => {
@@ -122,6 +126,7 @@ impl Cpu {
                 let param = bus.read(addr as u16);
                 self.pc += 1;
                 self.a = param;
+                println!("LDA ${:?}", param);
                 self.update_zero_and_negative_flags(self.a);
             }
             0xA9 => {
@@ -133,18 +138,22 @@ impl Cpu {
                 // println!("param a9: {}", param);
                 self.pc += 1;
                 self.a = param;
+                println!("LDA #${:x}", param);
                 self.update_zero_and_negative_flags(self.a);
             }
             0xAD => {
                 // LDA Absolute: Ambil data di alamat spesifik yang ditunjuk oleh 2 byte berikutnya
+                // Ukuran Opcode : 3 byte
+                // Contoh kode assembly : LDA $1000 [AD 00 10]
+                // Artinya : Ambil angka di dua byte berikutnya ($1000), lalu masukkan ke register A
                 let lo = bus.read(self.pc) as u16;
                 self.pc += 1;
                 let hi = bus.read(self.pc) as u16;
                 self.pc += 1;
-                let param = ((hi << 8) | lo) as u8;
-                println!("LDA Param address : {:x} {:x}", hi, lo);
-                println!("LDA Absolute param : {:x}", param);
-                self.a = param;
+                let addr = ((hi << 8) | lo);
+                let data = bus.read(addr);
+                println!("LDA ${:x}", addr);
+                self.a = data;
                 self.update_zero_and_negative_flags(self.a);
             }
             0xF0 => {
@@ -154,7 +163,7 @@ impl Cpu {
                 // Contoh kode assembly : BEQ $05
                 // Artinya : Jika bit flag zero di register status == 0, lompat 5 byte kedepan
                 let bytes_to_jump = bus.read(self.pc);
-                println!("BEQ offset : {:x}", bytes_to_jump);
+                println!("BEQ {:x}", bytes_to_jump);
                 self.pc += 1;
 
                 if (self.status & 0b00000010) == 1 {
