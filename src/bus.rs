@@ -26,12 +26,10 @@ impl Bus {
                 self.ram[addr as usize & 0x07FF]
             },
             0x2000..=0x2007 => { // PPU Register
-                // self.ppu.handle_opcode(addr);
-                0
+                self.ppu.handle_read(addr)
             },
             0x2008..=0x3FFF => { // PPU Register mirror
-                //TODO
-                0
+                self.ppu.handle_read(addr)
             },
             0x4000..=0x4017 => { // APU and IO
                 //TODO

@@ -30,5 +30,14 @@ impl Ppu {
             self.ppuctrl = val;
         }
     }
+
+    pub fn handle_read(&self, addr: u16) -> u8 {
+        if addr == 0x2002 {
+            self.ppustatus
+        } else {
+            println!("PPU address {} not implemented", addr);
+            0
+        }
+    }
 }
 
