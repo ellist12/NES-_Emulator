@@ -1,7 +1,7 @@
 use std::{fs::File, io};
 use std::io::Read;
 
-use crate::{bus::Bus, cartridge::Cartridge, cpu::Cpu, ppu::Ppu};
+use crate::{bus::Bus, cartridge::Cartridge, cpu::Cpu};
 
 pub struct MochaNES {
     cpu: Cpu,
@@ -28,6 +28,7 @@ impl MochaNES {
             io::stdin().read_line(&mut input).unwrap();
             self.cpu.step(&mut self.bus);
             println!("{:?}", self.cpu);
+            self.bus.view_ppu_status();
         }
     }
 

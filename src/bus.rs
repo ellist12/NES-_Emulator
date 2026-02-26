@@ -66,12 +66,11 @@ impl Bus {
                 // self.ram[addr as usize & 0x07FF]
             },
             0x2000..=0x2007 => { // PPU Register
-                //TODO
+                self.ppu.handle_write(addr, val);
 
             },
             0x2008..=0x3FFF => { // PPU Register mirror
-                //TODO
-
+                self.ppu.handle_write(addr, val);
             },
             0x4000..=0x4017 => { // APU and IO
                 //TODO
@@ -97,5 +96,10 @@ impl Bus {
 
     pub fn set_cartridge(&mut self, cartridge: Cartridge) {
         self.cartridge = Some(cartridge);
+    }
+
+    // Function untuk get ppu status, digunakan oleh struct mochanes agar bisa mendebug kondisi PPU
+    pub fn view_ppu_status(&self) {
+        println!("{:?}", self.ppu);
     }
 }
