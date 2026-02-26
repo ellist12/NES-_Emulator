@@ -90,16 +90,51 @@ impl Cpu {
                 self.a = self.a & param;
                 self.update_zero_and_negative_flags(self.a);
             }
+            0x91 => {
+                // STA (Indirect), Y : Lihat angka di alamat ram ZEROPAGE yang ditunjuk oleh byte berikutnya,
+                //                     baca 2 byte dari alamat itu untuk mendapatkan sebuah alamat baru,
+                //                     alamat baru itu kemudian tambahkan dengan value yang ada di register Y
+                //                     simpan nilai register A ke alamat baru yang sudah ditambahkan dengan value
+                //                     di register Y tersebut
+                // Ukuran Opcode : 2 byte
+                // Contoh kode assembly : STA ($20), Y
+                // Artinya :
+                //   1. Lihat angka yang ditunjuk oleh byte berikutnya, misal $20
+                //   2. Baca value dari byte di alamat $20 dan $21, lalu gabungkan jadi satu alamat di satu variabel u16 baru, misal $8000
+                //   3. Ambil nilai di register Y, misal $05
+                //   4. Jumlahkan keduanya, $8000 + $0005 = $8005
+                //   5. Tulis value di register A ke alamat $8005
+                let param = bus.read(self.pc) as u16;
+                self.pc += 1;
+                let lo = bus.read(param) as u16;
+                let hi = bus.read(param + 1) as u16;
+                let addr_to_add = (hi << 8) | lo;
+                let addr = addr_to_add + self.y as u16;
+                println!("STA (${}), Y", param);
+                bus.write(addr, self.a);
+            }
             0x9A => {
                 // TXS: Transfer X to Stack Pointer
                 // Pindah data dari register X ke stack pointer
                 println!("TSX");
                 self.sp = self.x;
             }
+            0x84 => {
+                // STY Zeropage: setor data ke bagian ram ZEROPAGE di alamat yang di specify di 1 byte berikutnya
+                //               bagian ZEROPAGE di ram punya rentang dari $0000 - $00FF
+                // Ukuran Opcode : 2 byte
+                // Contoh kode assembly : STY $10
+                // Artinya: Tulis value yang ada di register Y, ke address $10 di ram bagian ZEROPAGE ($0010)
+                let addr = bus.read(self.pc);
+                self.pc += 1;
+                bus.write(addr as u16, self.y);
+                println!("STY ${:x}", addr);
+            }
             0x8D => {
                 // STA Absolute: Tulis nilai dari register A, ke alamat memori yang ditentukan
-                // Instruksi 3 byte, contoh : STA $2000 (8D 00 20) di binary kodingan
-                // yang artinya tulis yang ada di register A ke address 2000
+                // Ukuran Opcode: 3 byte,
+                // Contoh kode assembly : STA $2000 [8D 00 20]
+                // Artinya: tulis yang ada di register A ke address 2000
                 let lo = bus.read(self.pc) as u16;
                 self.pc += 1;
                 let hi = bus.read(self.pc) as u16;
