@@ -56,7 +56,7 @@ Struktur Hardware NES :
     Cpu punya beberapa opcode / instruksi yang bisa dijalankan, penjelasan lebih lengkapnya akan dijabarkan di bagian opcode 
     
 ## PPU :
-    Picture Processing Unit, adalah bagian dari hardware NES yang memproses segala sesuatu yang berkaitan dengan grafik.
+    Picture Processing Unit, adalah bagian dari hardware NES yang memproses segala sesuatu yang berkaitan dengan grafik. PPU punya limitasi hanya support resolusi 256 x 240
     PPU ini punya beberapa register, antara lain : 
         - PPUCTRL (Write Only)
           Ini adalah tempat CPU memberi tahu bagaimana PPU harus bersikap. Diakses oleh CPU dengan menulis ke alamat 0x2000. Register ini berukuran 8 bit dengan deskripsi bit
@@ -116,6 +116,25 @@ Struktur Hardware NES :
         - PPUADDR (Write Only - Twice)
           Untuk menentukan alamat vram mana yang ingin diisi data. Karena Memori PPU (Vram) itu 16 bit, tapi jalu dari cpu cuma 8 bit, cpu harus menulis 2 kali ke register ini
         - PPUDATA
+    PPU punya 2 counter untuk nge track titik lokasi yang dirender : 
+        - Scanline : ini adalah counter untuk nge track lokasi titik secara vertikal. Ada total 262 scanline per frame untuk game dengan format NTSC, dan 312 scanline per frame untuk game 
+                     dengan format PAL. Detail scanlinenya adalah sebagai berikut : 
+                        - NTSC
+                          Scanline 0 - 239   : Visible (Gambar terlihat)
+                          Scanline 240       : Post-render (Idle)
+                          Scanline 241 - 260 : V-Blank (Masa istirahat), di sini kita set bit 7 di register 0x2002 (V-Blank Flag) jadi 1
+                          Scanline 261       : Pre-render, masa persiapan, di sini kita set bit 7 di register 0x2002 (V-Blank Flag) jadi 0
+                        - PAL
+                          Scanline 0 - 239   : Visible (Gambar terlihat)
+                          Scanline 240       : Post-render (Idle)
+                          Scanline 241 - 310 : V-Blank (Masa istirahat), di sini kita set bit 7 di register 0x2002 (V-Blank Flag) jadi 1
+                          Scanline 311       : Pre-render, masa persiapan, di sini kita set bit 7 di register 0x2002 (V-Blank Flag) jadi 0
+        - Cycle   : ini adalah counter untuk nge track lokasi titik secara horizontal. Ada total 341 cycles per frame untuk format NTSC dan PAL.
+                    Detail cyclenya adalah sebagai berikut : 
+                        - Cycle 0 - 1        : PPU Mempersiapkan diri untuk baris baru
+                        - Cycle 2 - 257      : PPU Mengambil data tile dari VRAM dan menggambar 256 pixel ke layar
+                        - Cycle 258 - 320    : PPU Mengambil data untuk fase berikutnya (pre-fetching)
+                        - Cycle 321 - 340    : H-Blank, PPU Beristirahat dan memindahkan posisi "pensil" kembali ke kiri
 
 ## Opcode : 
     Opcode adalah instruksi yang bentuknya binary, dan bisa dipahami oleh CPU dari NES.

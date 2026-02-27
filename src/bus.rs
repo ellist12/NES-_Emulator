@@ -1,4 +1,4 @@
-use crate::{cartridge::Cartridge, ppu::Ppu};
+use crate::{cartridge::Cartridge, mochanes::Region, ppu::Ppu};
 
 pub struct Bus {
     //ram
@@ -100,5 +100,16 @@ impl Bus {
     // Function untuk get ppu status, digunakan oleh struct mochanes agar bisa mendebug kondisi PPU
     pub fn view_ppu_status(&self) {
         println!("{:?}", self.ppu);
+    }
+
+    // Function untuk set region di struct PPU
+    pub fn set_ppu_region(&mut self, region: Region) {
+        self.ppu.set_region(region);
+    }
+
+    pub fn ppu_tick(&mut self, cpu_cyles: u16) {
+        for _ in 0..cpu_cyles {
+            self.ppu.tick();
+        }
     }
 }

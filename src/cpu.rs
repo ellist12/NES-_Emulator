@@ -123,7 +123,6 @@ impl Cpu {
                 // Contoh kode assembly : DEY
                 // Artinya : Kurangi nilai di register Y sebesar 1
                 self.y = self.y.wrapping_sub(1);
-                self.pc += 1;
                 println!("DEY");
                 self.update_zero_and_negative_flags(self.y);
                 self.cycle += 2;
@@ -303,7 +302,7 @@ impl Cpu {
                 cycle
             }
             _ => {
-                println!("Opcode {:02x} belum diimplementasi",opcode);
+                panic!("Opcode {:02x} belum diimplementasi",opcode);
                 0
             }
         }

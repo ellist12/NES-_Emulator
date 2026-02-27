@@ -3,7 +3,7 @@ use std::io::Read;
 
 use crate::{bus::Bus, cartridge::Cartridge, cpu::Cpu};
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub enum Region {
     NTSC,
     PAL
@@ -28,15 +28,17 @@ impl MochaNES {
         self.load_rom("Donkey Kong (JU) [T-Span].nes");
         self.cpu.reset(&mut self.bus);
         self.cpu.set_max_cycle(&self.region);
+        self.bus.set_ppu_region(self.region.clone());
     }
 
     pub fn run(&mut self) {
         let mut input = String::new();
 
-        for _ in 0..100 {
-            io::stdin().read_line(&mut input).unwrap();
+        loop {
+            // io::stdin().read_line(&mut input).unwrap();
             let cpu_cycle = self.cpu.step(&mut self.bus);
             println!("{:?}", self.cpu);
+            self.bus.ppu_tick(cpu_cycle);
             self.bus.view_ppu_status();
         }
     }
