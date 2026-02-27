@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::bus::Bus;
+use crate::{bus::Bus, mochanes::Region};
 
 pub struct Cpu {
     // Register Utama
@@ -11,7 +11,10 @@ pub struct Cpu {
     // Register Spesial
     sp: u8,    // Special Register
     pc: u16,   // Program Counter
-    status: u8 // Status register
+    status: u8, // Status register
+
+    cycle: u16, // Untuk menghitung cycle CPU
+    max_cycle: u16 // Maximum cpu cycle yang dijalankan dalam 1 frame
 }
 
 // // Bikin format debug cpu custom, biar bisa nampilin binary nya
@@ -36,7 +39,9 @@ impl Cpu {
             y: 0, 
             sp: 0xFD,
             pc: 0, 
-            status: 0x24 
+            status: 0x24,
+            cycle: 0,
+            max_cycle: 0
         }
     }
 
@@ -54,33 +59,52 @@ impl Cpu {
         println!("{:b}", self.pc);
     }
 
+    pub fn set_max_cycle(&mut self, region: &Region) {
+        self.max_cycle = if *region == Region::NTSC {
+            29780
+        } else {
+            35464
+        }
+    }
+
     // Fungsi ini memiliki 3 bagian: FETCH, DECODE, EXECUTE, ini adalah fungsi inti dari emulatornya, di run setelah semua 
     // komponen emulator udah siap
-    pub fn step(&mut self, bus: &mut Bus) {
+    pub fn step(&mut self, bus: &mut Bus) -> u16 {
         //1. FETCH: Ambil intruksi dari alamat memori yang disimpan di program counter, lalu majukan program counter
         let opcode = bus.read(self.pc);
         println!("Opcode : {:x}, {}", opcode, self.pc);
         self.pc += 1;
+
+        if self.cycle > self.max_cycle {
+            self.cycle = 0;
+        }
 
         //2. DECODE & EXECUTE: Cek opcodenya apa
         match opcode {
             0x78 => {
                 // SEI (Set Interrupt Flag)
                 // Nyalakan bit flag interrupt di status (0b00000100)
+                // Jumlah cycle : 2
                 println!("SEI");
                 self.status = self.status | 0b00000100;
+                self.cycle += 2;
+                2
             }
             0xD8 => {
                 // CLD (Clear Decimal Mode)
                 // Nyalakan bit flag decimal mode di status (0b00001000)
+                // Jumlah cycle : 2
                 println!("CLD");
                 self.status = self.status | 0b00001000;
+                self.cycle += 2;
+                2
             }
             0x29 => {
                 // AND Immidiate
                 // Lakukan operasi logic AND antara nilai di register A dan
                 // angka di byte berikutnya, hasilnya dimasukan ke register A
                 // Ukuran Opcode : 2 byte
+                // Jumlah cycle : 2
                 // Contoh kode assembly : AND #$80
                 // Artinya : lakukan operasi biner AND, antara value di register A dan value di byte berikutnya,
                 //           lalu masukkan hasilnya ke register a
@@ -89,16 +113,21 @@ impl Cpu {
                 self.pc += 1;
                 self.a = self.a & param;
                 self.update_zero_and_negative_flags(self.a);
+                self.cycle += 2;
+                2
             }
             0x88 => {
                 // DEY : Decrease Y Register, kurangi nilai di register y sebesar 1
                 // Ukuran Opcode : 1 byte
+                // Jumlah cycle : 2
                 // Contoh kode assembly : DEY
                 // Artinya : Kurangi nilai di register Y sebesar 1
                 self.y = self.y.wrapping_sub(1);
                 self.pc += 1;
                 println!("DEY");
                 self.update_zero_and_negative_flags(self.y);
+                self.cycle += 2;
+                2
             }
             0x91 => {
                 // STA (Indirect), Y : Lihat angka di alamat ram ZEROPAGE yang ditunjuk oleh byte berikutnya,
@@ -107,6 +136,7 @@ impl Cpu {
                 //                     simpan nilai register A ke alamat baru yang sudah ditambahkan dengan value
                 //                     di register Y tersebut
                 // Ukuran Opcode : 2 byte
+                // Jumlah cycle : 6
                 // Contoh kode assembly : STA ($20), Y
                 // Artinya :
                 //   1. Lihat angka yang ditunjuk oleh byte berikutnya, misal $20
@@ -122,27 +152,36 @@ impl Cpu {
                 let addr = addr_to_add + self.y as u16;
                 println!("STA (${}), Y", param);
                 bus.write(addr, self.a);
+                self.cycle += 6;
+                6
             }
             0x9A => {
                 // TXS: Transfer X to Stack Pointer
                 // Pindah data dari register X ke stack pointer
+                // Jumlah cycle : 2
                 println!("TXS");
                 self.sp = self.x;
+                self.cycle += 2;
+                2
             }
             0x84 => {
                 // STY Zeropage: setor data ke bagian ram ZEROPAGE di alamat yang di specify di 1 byte berikutnya
                 //               bagian ZEROPAGE di ram punya rentang dari $0000 - $00FF
                 // Ukuran Opcode : 2 byte
+                // Jumlah cycle : 3
                 // Contoh kode assembly : STY $10
                 // Artinya: Tulis value yang ada di register Y, ke address $10 di ram bagian ZEROPAGE ($0010)
                 let addr = bus.read(self.pc);
                 self.pc += 1;
                 bus.write(addr as u16, self.y);
                 println!("STY ${:x}", addr);
+                self.cycle += 3;
+                3
             }
             0x8D => {
                 // STA Absolute: Tulis nilai dari register A, ke alamat memori yang ditentukan
                 // Ukuran Opcode: 3 byte,
+                // Jumlah cycle : 4
                 // Contoh kode assembly : STA $2000 [8D 00 20]
                 // Artinya: tulis yang ada di register A ke address 2000
                 let lo = bus.read(self.pc) as u16;
@@ -153,10 +192,13 @@ impl Cpu {
                 let addr = (hi << 8) | lo;
                 println!("STA ${:x}", addr);
                 bus.write(addr, self.a);
+                self.cycle += 4;
+                4
             }
             0xA0 => {
                 // LDY Immideate: Ambil byte berikutnya, taruh di register Y
                 // Ukuran Opcode : 2 byte
+                // Jumlah cycle : 2
                 // Contoh kode assembly : LDY #$10 [A0 10]
                 // Artinya : ambil angka di byte berikutnya (10), dan masukkan ke register Y
                 let param = bus.read(self.pc);
@@ -164,10 +206,13 @@ impl Cpu {
                 self.y = param;
                 println!("LDY #${:x}", param);
                 self.update_zero_and_negative_flags(self.y);
+                self.cycle += 2;
+                2
             }
             0xA2 => {
                 // LDX Immideate: Ambil byte berikutnya, taruh di register X
                 // Ukuran Opcode : 2 byte
+                // Jumlah cycle : 2
                 // Contoh kode assembly : LDX #$10 [A2 10]
                 // Artinya : ambil angka di byte berikutnya (10), dan masukkan ke register X
                 let param = bus.read(self.pc);
@@ -175,11 +220,14 @@ impl Cpu {
                 self.x = param;
                 println!("LDX #${:x}", param);
                 self.update_zero_and_negative_flags(self.x);
+                self.cycle += 2;
+                2
             }
             0xA5 => {
                 // LDA Zeropage: Ambil data di alamat ram bagian ZEROPAGE yang di specify di 1 byte berikutnya
                 //               bagian ZEROPAGE di ram punya rentang dari $0000 - $00FF
                 // Ukuran Opcode : 2 byte
+                // Jumlah cycle : 3
                 // Contoh kode assembly : LDA $10 [A5 10]
                 // Artinya : ambil angka di ram dengan address $10 ($0010), dan masukkan ke register A
                 let addr = bus.read(self.pc);
@@ -188,10 +236,13 @@ impl Cpu {
                 self.a = param;
                 println!("LDA ${:?}", param);
                 self.update_zero_and_negative_flags(self.a);
+                self.cycle += 3;
+                3
             }
             0xA9 => {
                 // LDA Immediate: Ambil byte berikutnya, taruh di register A
                 // Ukuran Opcode : 2 byte
+                // Jumlah cycle : 2
                 // Contoh kode assembly : LDA #$30 [A9 30]
                 // Artinya : Ambil angka di byte berikutnya (30) lalu masukkan ke register A
                 let param = bus.read(self.pc);
@@ -200,10 +251,13 @@ impl Cpu {
                 self.a = param;
                 println!("LDA #${:x}", param);
                 self.update_zero_and_negative_flags(self.a);
+                self.cycle += 2;
+                2
             }
             0xAD => {
                 // LDA Absolute: Ambil data di alamat spesifik yang ditunjuk oleh 2 byte berikutnya
                 // Ukuran Opcode : 3 byte
+                // Jumlah cycle : 4
                 // Contoh kode assembly : LDA $1000 [AD 00 10]
                 // Artinya : Ambil angka di dua byte berikutnya ($1000), lalu masukkan ke register A
                 let lo = bus.read(self.pc) as u16;
@@ -215,25 +269,42 @@ impl Cpu {
                 println!("LDA ${:x}", addr);
                 self.a = data;
                 self.update_zero_and_negative_flags(self.a);
+                self.cycle += 4;
+                4
             }
             0xF0 => {
                 // BEQ (Branch if Equal/ Branch if Zero)
                 // Melompat ke baris kode lain jika hasil operasi sebelumnya adalah 0, jumlah lompatan tergantung dengan 1 byte berikutnya.
                 // Untuk BEQ angka di 1 byte berikutnya harus kita konversi dulu menjadi signed integer i8 sebelum kita operasikan
                 // Ukuran Opcode : 2 byte
+                // Jumlah cycle :
+                //      1. 2 jika kondisi tidak terpenuhi
+                //      2. 3 jika kondisi terpenuhi dan tidak melewati *page boundary*
+                //      3. 4 jika kondisi terpenuhi dan melewati *page_boundary*
                 // Contoh kode assembly : BEQ $05
                 // Artinya : Jika bit flag zero di register status == 1, lompat 5 byte kedepan
                 let bytes_to_jump = bus.read(self.pc);
                 println!("BEQ {:x}", bytes_to_jump);
                 self.pc += 1;
+                let mut cycle = 2;
 
                 if (self.status & 0b00000010) != 0 {
+                    cycle += 1;
                     let offset = bytes_to_jump as i8;
-                    self.pc = self.pc.wrapping_add_signed(offset as i16);
+                    let old_pc = self.pc;
+                    let new_pc = self.pc.wrapping_add_signed(offset as i16);
+                    if (old_pc & 0xFF00) != (new_pc & 0xFF00) {
+                        // Terjadi page crossing, tambah 1 cycle
+                        cycle += 1;
+                    }
+                    self.pc = new_pc;
                 }
+                self.cycle = cycle;
+                cycle
             }
             _ => {
                 println!("Opcode {:02x} belum diimplementasi",opcode);
+                0
             }
         }
     }

@@ -3,9 +3,16 @@ use std::io::Read;
 
 use crate::{bus::Bus, cartridge::Cartridge, cpu::Cpu};
 
+#[derive(PartialEq)]
+pub enum Region {
+    NTSC,
+    PAL
+}
+
 pub struct MochaNES {
     cpu: Cpu,
     bus: Bus,
+    region: Region
 }
 
 impl MochaNES {
@@ -13,12 +20,14 @@ impl MochaNES {
         MochaNES {
             cpu: Cpu::new(),
             bus: Bus::new(),
+            region: Region::NTSC // Default region kita set ke NTSC dulu
         }
     }
 
     pub fn init (&mut self) {
         self.load_rom("Donkey Kong (JU) [T-Span].nes");
         self.cpu.reset(&mut self.bus);
+        self.cpu.set_max_cycle(&self.region);
     }
 
     pub fn run(&mut self) {
@@ -26,7 +35,7 @@ impl MochaNES {
 
         for _ in 0..100 {
             io::stdin().read_line(&mut input).unwrap();
-            self.cpu.step(&mut self.bus);
+            let cpu_cycle = self.cpu.step(&mut self.bus);
             println!("{:?}", self.cpu);
             self.bus.view_ppu_status();
         }
@@ -60,6 +69,16 @@ impl MochaNES {
         //   angka di byte 5 header nanti akan kita kalikan dengan 8KB untuk mengetahui ukurannya
         let chr_banks = header[5];
         let chr_size = (chr_banks as usize) * 8 * 1024; // 16 * 1024 = 16KB
+
+        //5. Baca region game di byte ke 7 untuk tahu game ini dibuat untuk region NTSC / PAL
+        //   Jika bit ke 0 dari byte 7 ini value nya 0, maka game ini adalah versi region NTSC
+        //   Jika 1, maka game ini adalah versi region PAL
+        let region = header[7];
+        self.region = if region & 0b00000001 == 0 {
+            Region::NTSC
+        } else {
+            Region::PAL
+        };
 
         //5. Sekarang, kita bisa load data program ke memori
         let mut prg_rom = vec![0u8; prg_size];
