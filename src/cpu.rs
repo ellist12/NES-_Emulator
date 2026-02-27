@@ -271,6 +271,21 @@ impl Cpu {
                 self.cycle += 4;
                 4
             }
+            0xC6 => {
+                // DEC (Decrement Memory)
+                // Ambil nilai di sebuah alamat memory yang di specify di byte berikutnya setelah opcode, menguranginya dengan 1,
+                // menyimpan kembali hasilnya ke alamat tersebut
+                // Ukuran Opcode : 2 byte
+                // Jumlah cycle : 5 cycle
+                let param = bus.read(self.pc);
+                self.pc += 1;
+                let old_data = bus.read(param as u16);
+                let new_data = old_data.wrapping_sub(1);
+                bus.write(param as u16, new_data);
+                self.update_zero_and_negative_flags(new_data);
+                self.cycle += 5;
+                5
+            }
             0xD0 => {
                 // BNE (Branch if Not Equal)
                 // Melompat ke baris kode lain jika hasil operasi sebelumnya tidak 0, jumlah lompatan tergantung dengan 1 byte berikutnya
