@@ -271,10 +271,39 @@ impl Cpu {
                 self.cycle += 4;
                 4
             }
+            0xD0 => {
+                // BNE (Branch if Not Equal)
+                // Melompat ke baris kode lain jika hasil operasi sebelumnya tidak 0, jumlah lompatan tergantung dengan 1 byte berikutnya
+                // Untuk BNE, angka di 1 byte berikutnya harus kita konversi dulu menjadi signed integer i8 sebelum kita operasikan
+                // Ukuran Opcode : 2 byte
+                // Jumlah cycle :
+                //      1. 2 jika kondisi tidak terpenuhi
+                //      2. 3 jika kondisi terpenuhi dan tidak melewati *page boundary*
+                //      3. 4 jika kondisi terpenuhi dan melewati *page_boundary*
+                // Contoh kode assembly : BNE $05
+                // Artinya : Jika bit flag zero di register status == 0, lompat 5 byte kedepan
+                let bytes_to_jump = bus.read(self.pc);
+                println!("BNE ${:x}", bytes_to_jump);
+                self.pc += 1;
+                let mut cycle = 2;
+
+                if (self.status & 0b00000010) == 0 {
+                    cycle += 1;
+                    let offset = bytes_to_jump as i8;
+                    let old_pc = self.pc;
+                    let new_pc = self.pc.wrapping_add_signed(offset as i16);
+                    if (old_pc & 0xFF00) != (new_pc & 0xFF00) {
+                        cycle += 1;
+                    }
+                    self.pc = new_pc;
+                }
+                self.cycle += cycle;
+                cycle
+            }
             0xF0 => {
                 // BEQ (Branch if Equal/ Branch if Zero)
                 // Melompat ke baris kode lain jika hasil operasi sebelumnya adalah 0, jumlah lompatan tergantung dengan 1 byte berikutnya.
-                // Untuk BEQ angka di 1 byte berikutnya harus kita konversi dulu menjadi signed integer i8 sebelum kita operasikan
+                // Untuk BEQ, angka di 1 byte berikutnya harus kita konversi dulu menjadi signed integer i8 sebelum kita operasikan
                 // Ukuran Opcode : 2 byte
                 // Jumlah cycle :
                 //      1. 2 jika kondisi tidak terpenuhi
@@ -298,7 +327,7 @@ impl Cpu {
                     }
                     self.pc = new_pc;
                 }
-                self.cycle = cycle;
+                self.cycle += cycle;
                 cycle
             }
             _ => {
