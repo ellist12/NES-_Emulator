@@ -108,6 +108,31 @@ impl Cpu {
                 self.cycle += cycle;
                 cycle
             }
+            0x20 => {
+                // JSR (Jump to subroutine)
+                // CPU Pergi ke alamat lain untuk menjalankan kode, tapi ia "mencatat" alamat asalnya agar nanti bisa pulang menggunakan
+                // instruksi RTS (Return from Subsoutine)
+                // Ukuran opcode : 3 byte
+                // Jumlah cycle : 6 cycle
+                // Contoh kode assembly : JSR $1000 [20 00 10]
+                // Artinya : Pergi ke alamat $1000, tapi catat alamat asal di stack agar bisa balik
+                let lo = bus.read(self.pc) as u16;
+                self.pc += 1;
+                let hi = bus.read(self.pc) as u16;
+                let addr = (hi << 8)  | lo;
+                self.pc += 1;
+
+                let pc_lo = ((self.pc - 1) & 0x00FF) as u8;
+                let pc_hi = ((self.pc - 1) >> 8) as u8;
+                bus.write(0x0100 + self.sp as u16, pc_hi);
+                self.sp -= 1;
+                bus.write(0x0100 + self.sp as u16, pc_lo);
+                self.sp -= 1;
+
+                self.pc = addr;
+
+                6
+            }
             0x78 => {
                 // SEI (Set Interrupt Flag)
                 // Nyalakan bit flag interrupt di status (0b00000100)
@@ -290,7 +315,7 @@ impl Cpu {
                 self.pc += 1;
                 let hi = bus.read(self.pc) as u16;
                 self.pc += 1;
-                let addr = ((hi << 8) | lo);
+                let addr = (hi << 8) | lo;
                 let data = bus.read(addr);
                 println!("LDA ${:x}", addr);
                 self.a = data;
