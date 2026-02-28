@@ -95,7 +95,7 @@ impl Cpu {
                 let mut cycle = 2;
                 let bytes_to_jump = bus.read(self.pc);
                 println!("BPL ${:x}", bytes_to_jump);
-                self.pc += 1;
+                self.pc = self.pc.wrapping_add(1);
                 if self.status & 0b10000000 == 0 {
                     cycle += 1;
                     let offset = bytes_to_jump as i8;
@@ -118,19 +118,19 @@ impl Cpu {
                 // Contoh kode assembly : JSR $1000 [20 00 10]
                 // Artinya : Pergi ke alamat $1000, tapi catat alamat asal di stack agar bisa balik
                 let lo = bus.read(self.pc) as u16;
-                self.pc += 1;
+                self.pc = self.pc.wrapping_add(1);
                 let hi = bus.read(self.pc) as u16;
                 let addr = (hi << 8)  | lo;
-                self.pc += 1;
+                self.pc = self.pc.wrapping_add(1);
 
                 println!("JSR ${:x}", addr);
 
                 let pc_lo = ((self.pc - 1) & 0x00FF) as u8;
                 let pc_hi = ((self.pc - 1) >> 8) as u8;
                 bus.write(0x0100 + self.sp as u16, pc_hi);
-                self.sp -= 1;
+                self.sp = self.sp.wrapping_sub(1);
                 bus.write(0x0100 + self.sp as u16, pc_lo);
-                self.sp -= 1;
+                self.sp = self.sp.wrapping_sub(1);
 
                 self.pc = addr;
                 self.cycle += 6;
@@ -145,6 +145,7 @@ impl Cpu {
                 // Jumlah cycle : 3 cycle
                 // Contoh kode assembly : PHA
                 // Artinya : Push nilai register A ke stack
+                println!("PHA");
                 bus.write(0x0100 + self.sp as u16, self.a);
                 self.sp = self.sp.wrapping_sub(1);
                 self.cycle += 3;
@@ -159,7 +160,7 @@ impl Cpu {
                 // Contoh kode assembly : JMP $0020
                 // Artinya : Jump ke address $0020
                 let lo = bus.read(self.pc) as u16;
-                let hi = bus.read(self.pc + 1) as u16;
+                let hi = bus.read(self.pc.wrapping_add(1)) as u16;
                 let addr = (hi << 8) | lo;
                 println!("JMP ${:x}", addr);
                 self.pc = addr;
@@ -183,7 +184,7 @@ impl Cpu {
                 // Contoh kode assembly : STA $02
                 // Artinya : simpan nilai dari register A, ke bagian ram ZEROPAGE dengan address $02 (simpan ke $0002)
                 let param = bus.read(self.pc);
-                self.pc += 1;
+                self.pc = self.pc.wrapping_add(1);
                 let addr = param as u16;
                 println!("STA ${:x}", param);
                 bus.write(addr, self.a);
@@ -210,7 +211,7 @@ impl Cpu {
                 //           lalu masukkan hasilnya ke register a
                 let param = bus.read(self.pc);
                 println!("AND #${:x}", param);
-                self.pc += 1;
+                self.pc = self.pc.wrapping_add(1);
                 self.a = self.a & param;
                 self.update_zero_and_negative_flags(self.a);
                 self.cycle += 2;
@@ -244,7 +245,7 @@ impl Cpu {
                 //   4. Jumlahkan keduanya, $8000 + $0005 = $8005
                 //   5. Tulis value di register A ke alamat $8005
                 let param = bus.read(self.pc) as u16;
-                self.pc += 1;
+                self.pc = self.pc.wrapping_add(1);
                 let lo = bus.read(param) as u16;
                 let hi = bus.read(param + 1) as u16;
                 let addr_to_add = (hi << 8) | lo;
@@ -271,7 +272,7 @@ impl Cpu {
                 // Contoh kode assembly : STY $10
                 // Artinya: Tulis value yang ada di register Y, ke address $10 di ram bagian ZEROPAGE ($0010)
                 let addr = bus.read(self.pc);
-                self.pc += 1;
+                self.pc = self.pc.wrapping_add(1);
                 bus.write(addr as u16, self.y);
                 println!("STY ${:x}", addr);
                 self.cycle += 3;
@@ -284,9 +285,9 @@ impl Cpu {
                 // Contoh kode assembly : STA $2000 [8D 00 20]
                 // Artinya: tulis yang ada di register A ke address 2000
                 let lo = bus.read(self.pc) as u16;
-                self.pc += 1;
+                self.pc = self.pc.wrapping_add(1);
                 let hi = bus.read(self.pc) as u16;
-                self.pc += 1;
+                self.pc = self.pc.wrapping_add(1);
 
                 let addr = (hi << 8) | lo;
                 println!("STA ${:x}", addr);
@@ -301,7 +302,7 @@ impl Cpu {
                 // Contoh kode assembly : LDY #$10 [A0 10]
                 // Artinya : ambil angka di byte berikutnya (10), dan masukkan ke register Y
                 let param = bus.read(self.pc);
-                self.pc += 1;
+                self.pc = self.pc.wrapping_add(1);
                 self.y = param;
                 println!("LDY #${:x}", param);
                 self.update_zero_and_negative_flags(self.y);
@@ -315,7 +316,7 @@ impl Cpu {
                 // Contoh kode assembly : LDX #$10 [A2 10]
                 // Artinya : ambil angka di byte berikutnya (10), dan masukkan ke register X
                 let param = bus.read(self.pc);
-                self.pc+=1;
+                self.pc = self.pc.wrapping_add(1);
                 self.x = param;
                 println!("LDX #${:x}", param);
                 self.update_zero_and_negative_flags(self.x);
@@ -331,7 +332,7 @@ impl Cpu {
                 // Artinya : ambil angka di ram dengan address $10 ($0010), dan masukkan ke register A
                 let addr = bus.read(self.pc);
                 let param = bus.read(addr as u16);
-                self.pc += 1;
+                self.pc = self.pc.wrapping_add(1);
                 self.a = param;
                 println!("LDA ${:?}", param);
                 self.update_zero_and_negative_flags(self.a);
@@ -346,7 +347,7 @@ impl Cpu {
                 // Artinya : Ambil angka di byte berikutnya (30) lalu masukkan ke register A
                 let param = bus.read(self.pc);
                 // println!("param a9: {}", param);
-                self.pc += 1;
+                self.pc = self.pc.wrapping_add(1);
                 self.a = param;
                 println!("LDA #${:x}", param);
                 self.update_zero_and_negative_flags(self.a);
@@ -360,9 +361,9 @@ impl Cpu {
                 // Contoh kode assembly : LDA $1000 [AD 00 10]
                 // Artinya : Ambil angka di dua byte berikutnya ($1000), lalu masukkan ke register A
                 let lo = bus.read(self.pc) as u16;
-                self.pc += 1;
+                self.pc = self.pc.wrapping_add(1);
                 let hi = bus.read(self.pc) as u16;
-                self.pc += 1;
+                self.pc = self.pc.wrapping_add(1);
                 let addr = (hi << 8) | lo;
                 let data = bus.read(addr);
                 println!("LDA ${:x}", addr);
@@ -379,7 +380,7 @@ impl Cpu {
                 // Jumlah cycle : 5 cycle
                 let param = bus.read(self.pc);
                 println!("DEC ${:x}", param);
-                self.pc += 1;
+                self.pc = self.pc.wrapping_add(1);
                 let old_data = bus.read(param as u16);
                 let new_data = old_data.wrapping_sub(1);
                 bus.write(param as u16, new_data);
@@ -400,7 +401,7 @@ impl Cpu {
                 // Artinya : Jika bit flag zero di register status == 0, lompat 5 byte kedepan
                 let bytes_to_jump = bus.read(self.pc);
                 println!("BNE ${:x}", bytes_to_jump);
-                self.pc += 1;
+                self.pc = self.pc.wrapping_add(1);
                 let mut cycle = 2;
 
                 if (self.status & 0b00000010) == 0 {
@@ -429,7 +430,7 @@ impl Cpu {
                 // Artinya : Jika bit flag zero di register status == 1, lompat 5 byte kedepan
                 let bytes_to_jump = bus.read(self.pc);
                 println!("BEQ {:x}", bytes_to_jump);
-                self.pc += 1;
+                self.pc = self.pc.wrapping_add(1);
                 let mut cycle = 2;
 
                 if (self.status & 0b00000010) != 0 {
