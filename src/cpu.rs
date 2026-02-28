@@ -94,6 +94,7 @@ impl Cpu {
                 // Artinya : Jika bit flag negatif di register status == 0, lompat 5 byte kedepan
                 let mut cycle = 2;
                 let bytes_to_jump = bus.read(self.pc);
+                println!("BPL ${:x}", bytes_to_jump);
                 self.pc += 1;
                 if self.status & 0b10000000 == 0 {
                     cycle += 1;
@@ -122,6 +123,8 @@ impl Cpu {
                 let addr = (hi << 8)  | lo;
                 self.pc += 1;
 
+                println!("JSR ${:x}", addr);
+
                 let pc_lo = ((self.pc - 1) & 0x00FF) as u8;
                 let pc_hi = ((self.pc - 1) >> 8) as u8;
                 bus.write(0x0100 + self.sp as u16, pc_hi);
@@ -133,6 +136,22 @@ impl Cpu {
                 self.cycle += 6;
 
                 6
+            }
+            0x4c => {
+                // JMP (Jump)
+                // Melakukan jump (mengganti nilai program counter) ke value yang ditetapkan di 2 byte berikutnya.
+                // Opcode ini mirip seperti JSR, tapi tidak menyimpan lokasi pc awal di stack
+                // Ukuran opcode : 3 byte
+                // Jumlah cycle : 3
+                // Contoh kode assembly : JMP $0020
+                // Artinya : Jump ke address $0020
+                let lo = bus.read(self.pc) as u16;
+                let hi = bus.read(self.pc + 1) as u16;
+                let addr = (hi << 8) | lo;
+                println!("JMP ${:x}", addr);
+                self.pc = addr;
+                self.cycle += 3;
+                3
             }
             0x78 => {
                 // SEI (Set Interrupt Flag)
@@ -153,6 +172,7 @@ impl Cpu {
                 let param = bus.read(self.pc);
                 self.pc += 1;
                 let addr = param as u16;
+                println!("STA ${:x}", param);
                 bus.write(addr, self.a);
                 self.cycle += 3;
                 3
@@ -339,12 +359,13 @@ impl Cpu {
                 4
             }
             0xC6 => {
-                // DEC (Decrement Memory)
-                // Ambil nilai di sebuah alamat memory yang di specify di byte berikutnya setelah opcode, menguranginya dengan 1,
+                // DEC (Decrement Memory) Zero Page
+                // Ambil nilai di sebuah alamat memory ZEROPAGE yang di specify di byte berikutnya setelah opcode, menguranginya dengan 1,
                 // menyimpan kembali hasilnya ke alamat tersebut
                 // Ukuran Opcode : 2 byte
                 // Jumlah cycle : 5 cycle
                 let param = bus.read(self.pc);
+                println!("DEC ${:x}", param);
                 self.pc += 1;
                 let old_data = bus.read(param as u16);
                 let new_data = old_data.wrapping_sub(1);
