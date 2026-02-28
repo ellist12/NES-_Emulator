@@ -137,6 +137,19 @@ impl Cpu {
 
                 6
             }
+            0x48 => {
+                // PHA (Push accumulator on stack)
+                // Menyimpan sementara nilai dari register A ke stack, sehingga accumulator bisa digunakan untuk
+                // keperluan lain tanpa kehilangan nilai awalnya
+                // Ukuran opcode : 1 byte
+                // Jumlah cycle : 3 cycle
+                // Contoh kode assembly : PHA
+                // Artinya : Push nilai register A ke stack
+                bus.write(0x0100 + self.sp as u16, self.a);
+                self.sp = self.sp.wrapping_sub(1);
+                self.cycle += 3;
+                3
+            }
             0x4c => {
                 // JMP (Jump)
                 // Melakukan jump (mengganti nilai program counter) ke value yang ditetapkan di 2 byte berikutnya.
