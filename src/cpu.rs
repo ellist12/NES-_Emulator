@@ -130,6 +130,7 @@ impl Cpu {
                 self.sp -= 1;
 
                 self.pc = addr;
+                self.cycle += 6;
 
                 6
             }
@@ -141,6 +142,20 @@ impl Cpu {
                 self.status = self.status | 0b00000100;
                 self.cycle += 2;
                 2
+            }
+            0x85 => {
+                // STA (Store Accumulator) Zero Page
+                // Store nilai dari register A, ke ram bagian ZEROPAGE yang addressnya di specify di byte berikutnya
+                // Ukuran Opcode : 2 byte
+                // Jumlah cycle : 3 cycle
+                // Contoh kode assembly : STA $02
+                // Artinya : simpan nilai dari register A, ke bagian ram ZEROPAGE dengan address $02 (simpan ke $0002)
+                let param = bus.read(self.pc);
+                self.pc += 1;
+                let addr = param as u16;
+                bus.write(addr, self.a);
+                self.cycle += 3;
+                3
             }
             0xD8 => {
                 // CLD (Clear Decimal Mode)
