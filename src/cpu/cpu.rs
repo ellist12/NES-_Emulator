@@ -1,19 +1,19 @@
 use std::fmt;
 
-use crate::{bus::Bus, mochanes::Region};
+use crate::{bus::Bus, cpu::instructions::{lda::LDA, ldy::LDY}, mochanes::Region};
 
 pub struct Cpu {
     // Register Utama
-    a: u8, // Accumulator
-    x: u8, // Index X
-    y: u8, // Index Y
+    pub(crate) a: u8, // Accumulator
+    pub(crate) x: u8, // Index X
+    pub(crate) y: u8, // Index Y
 
     // Register Spesial
-    sp: u8,    // Special Register
-    pc: u16,   // Program Counter
-    status: u8, // Status register
+    pub(crate) sp: u8,    // Special Register
+    pub(crate) pc: u16,   // Program Counter
+    pub(crate) status: u8, // Status register
 
-    cycle: u16, // Untuk menghitung cycle CPU
+    pub(crate) cycle: u16, // Untuk menghitung cycle CPU
     max_cycle: u16 // Maximum cpu cycle yang dijalankan dalam 1 frame
 }
 
@@ -296,18 +296,7 @@ impl Cpu {
                 4
             }
             0xA0 => {
-                // LDY Immideate: Ambil byte berikutnya, taruh di register Y
-                // Ukuran Opcode : 2 byte
-                // Jumlah cycle : 2
-                // Contoh kode assembly : LDY #$10 [A0 10]
-                // Artinya : ambil angka di byte berikutnya (10), dan masukkan ke register Y
-                let param = bus.read(self.pc);
-                self.pc = self.pc.wrapping_add(1);
-                self.y = param;
-                println!("LDY #${:x}", param);
-                self.update_zero_and_negative_flags(self.y);
-                self.cycle += 2;
-                2
+                LDY::immideate(self, bus)
             }
             0xA2 => {
                 // LDX Immideate: Ambil byte berikutnya, taruh di register X
@@ -323,54 +312,20 @@ impl Cpu {
                 self.cycle += 2;
                 2
             }
+            0xA4 => {
+                LDY::zeropage(self, bus)
+            }
             0xA5 => {
-                // LDA Zeropage: Ambil data di alamat ram bagian ZEROPAGE yang di specify di 1 byte berikutnya
-                //               bagian ZEROPAGE di ram punya rentang dari $0000 - $00FF
-                // Ukuran Opcode : 2 byte
-                // Jumlah cycle : 3
-                // Contoh kode assembly : LDA $10 [A5 10]
-                // Artinya : ambil angka di ram dengan address $10 ($0010), dan masukkan ke register A
-                let addr = bus.read(self.pc);
-                let param = bus.read(addr as u16);
-                self.pc = self.pc.wrapping_add(1);
-                self.a = param;
-                println!("LDA ${:?}", param);
-                self.update_zero_and_negative_flags(self.a);
-                self.cycle += 3;
-                3
+                LDA::zeropage(self, bus)
             }
             0xA9 => {
-                // LDA Immediate: Ambil byte berikutnya, taruh di register A
-                // Ukuran Opcode : 2 byte
-                // Jumlah cycle : 2
-                // Contoh kode assembly : LDA #$30 [A9 30]
-                // Artinya : Ambil angka di byte berikutnya (30) lalu masukkan ke register A
-                let param = bus.read(self.pc);
-                // println!("param a9: {}", param);
-                self.pc = self.pc.wrapping_add(1);
-                self.a = param;
-                println!("LDA #${:x}", param);
-                self.update_zero_and_negative_flags(self.a);
-                self.cycle += 2;
-                2
+                LDA::immideate(self, bus)
+            }
+            0xAC => {
+                LDY::absolute(self, bus)
             }
             0xAD => {
-                // LDA Absolute: Ambil data di alamat spesifik yang ditunjuk oleh 2 byte berikutnya
-                // Ukuran Opcode : 3 byte
-                // Jumlah cycle : 4
-                // Contoh kode assembly : LDA $1000 [AD 00 10]
-                // Artinya : Ambil angka di dua byte berikutnya ($1000), lalu masukkan ke register A
-                let lo = bus.read(self.pc) as u16;
-                self.pc = self.pc.wrapping_add(1);
-                let hi = bus.read(self.pc) as u16;
-                self.pc = self.pc.wrapping_add(1);
-                let addr = (hi << 8) | lo;
-                let data = bus.read(addr);
-                println!("LDA ${:x}", addr);
-                self.a = data;
-                self.update_zero_and_negative_flags(self.a);
-                self.cycle += 4;
-                4
+                LDA::absolute(self, bus)
             }
             0xC6 => {
                 // DEC (Decrement Memory) Zero Page
@@ -457,7 +412,7 @@ impl Cpu {
     // Fungsi untuk cek, apakah angka yang ingin dimasukkan ke register itu negatif atau zero,
     // kalau negatif, nyalakan negative flag, kalau zero, nyalakan zero flag, kalau sebaliknya,
     // matikan keduanya
-    fn update_zero_and_negative_flags(&mut self, result: u8) {
+    pub(crate) fn update_zero_and_negative_flags(&mut self, result: u8) {
         // cek angka 0 apa nggak
         if result == 0 {
             self.status = self.status | 0b00000010;
