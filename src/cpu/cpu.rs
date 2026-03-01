@@ -105,6 +105,9 @@ impl Cpu {
             0xD8 => {
                 CLD::clear(self)
             }
+            0x25 => {
+                AND::zeropage(self, bus)
+            }
             0x29 => {
                 AND::immediate(self, bus)
             }
