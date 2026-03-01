@@ -6,3 +6,4 @@ pub mod pha;
 pub mod jmp;
 pub mod sei;
 pub mod sta;
+pub mod dey;

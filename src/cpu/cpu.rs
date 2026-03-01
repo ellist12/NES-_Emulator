@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{bus::Bus, cpu::instructions::{bpl::BPL, jmp::JMP, jsr::JSR, lda::LDA, ldy::LDY, pha::PHA, sei::SEI, sta::STA}, mochanes::Region};
+use crate::{bus::Bus, cpu::instructions::{bpl::BPL, dey::DEY, jmp::JMP, jsr::JSR, lda::LDA, ldy::LDY, pha::PHA, sei::SEI, sta::STA}, mochanes::Region};
 
 pub struct Cpu {
     // Register Utama
@@ -126,16 +126,7 @@ impl Cpu {
                 2
             }
             0x88 => {
-                // DEY : Decrease Y Register, kurangi nilai di register y sebesar 1
-                // Ukuran Opcode : 1 byte
-                // Jumlah cycle : 2
-                // Contoh kode assembly : DEY
-                // Artinya : Kurangi nilai di register Y sebesar 1
-                self.y = self.y.wrapping_sub(1);
-                println!("DEY");
-                self.update_zero_and_negative_flags(self.y);
-                self.cycle += 2;
-                2
+                DEY::decrease(self)
             }
             0x91 => {
                 // STA (Indirect), Y : Lihat angka di alamat ram ZEROPAGE yang ditunjuk oleh byte berikutnya,
