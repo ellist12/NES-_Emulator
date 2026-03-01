@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{bus::Bus, cpu::instructions::{and::AND, bpl::BPL, cld::CLD, dey::DEY, jmp::JMP, jsr::JSR, lda::LDA, ldy::LDY, pha::PHA, sei::SEI, sta::STA}, mochanes::Region};
+use crate::{bus::Bus, cpu::instructions::{and::AND, bpl::BPL, cld::CLD, dey::DEY, jmp::JMP, jsr::JSR, lda::LDA, ldy::LDY, pha::PHA, sei::SEI, sta::STA, txs::TXS}, mochanes::Region};
 
 pub struct Cpu {
     // Register Utama
@@ -112,13 +112,7 @@ impl Cpu {
                 STA::indirect_y(self, bus)
             }
             0x9A => {
-                // TXS: Transfer X to Stack Pointer
-                // Pindah data dari register X ke stack pointer
-                // Jumlah cycle : 2
-                println!("TXS");
-                self.sp = self.x;
-                self.cycle += 2;
-                2
+                TXS::transfer(self)
             }
             0x84 => {
                 // STY Zeropage: setor data ke bagian ram ZEROPAGE di alamat yang di specify di 1 byte berikutnya
