@@ -14,3 +14,4 @@ pub mod sty;
 pub mod ldx;
 pub mod dec;
 pub mod beq;
+pub mod bne;

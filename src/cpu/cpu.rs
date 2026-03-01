@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{bus::Bus, cpu::instructions::{and::AND, beq::BEQ, bpl::BPL, cld::CLD, dec::DEC, dey::DEY, jmp::JMP, jsr::JSR, lda::LDA, ldx::LDX, ldy::LDY, pha::PHA, sei::SEI, sta::STA, sty::STY, txs::TXS}, mochanes::Region};
+use crate::{bus::Bus, cpu::instructions::{and::AND, beq::BEQ, bne::BNE, bpl::BPL, cld::CLD, dec::DEC, dey::DEY, jmp::JMP, jsr::JSR, lda::LDA, ldx::LDX, ldy::LDY, pha::PHA, sei::SEI, sta::STA, sty::STY, txs::TXS}, mochanes::Region};
 
 pub struct Cpu {
     // Register Utama
@@ -145,40 +145,13 @@ impl Cpu {
                 DEC::zeropage(self, bus)
             }
             0xD0 => {
-                // BNE (Branch if Not Equal)
-                // Melompat ke baris kode lain jika hasil operasi sebelumnya tidak 0, jumlah lompatan tergantung dengan 1 byte berikutnya
-                // Untuk BNE, angka di 1 byte berikutnya harus kita konversi dulu menjadi signed integer i8 sebelum kita operasikan
-                // Ukuran Opcode : 2 byte
-                // Jumlah cycle :
-                //      1. 2 jika kondisi tidak terpenuhi
-                //      2. 3 jika kondisi terpenuhi dan tidak melewati *page boundary*
-                //      3. 4 jika kondisi terpenuhi dan melewati *page_boundary*
-                // Contoh kode assembly : BNE $05
-                // Artinya : Jika bit flag zero di register status == 0, lompat 5 byte kedepan
-                let bytes_to_jump = bus.read(self.pc);
-                println!("BNE ${:x}", bytes_to_jump);
-                self.pc = self.pc.wrapping_add(1);
-                let mut cycle = 2;
-
-                if (self.status & 0b00000010) == 0 {
-                    cycle += 1;
-                    let offset = bytes_to_jump as i8;
-                    let old_pc = self.pc;
-                    let new_pc = self.pc.wrapping_add_signed(offset as i16);
-                    if (old_pc & 0xFF00) != (new_pc & 0xFF00) {
-                        cycle += 1;
-                    }
-                    self.pc = new_pc;
-                }
-                self.cycle += cycle;
-                cycle
+                BNE::branch(self, bus)
             }
             0xF0 => {
                 BEQ::branch(self, bus)
             }
             _ => {
                 panic!("Opcode {:02x} belum diimplementasi",opcode);
-                0
             }
         }
     }
