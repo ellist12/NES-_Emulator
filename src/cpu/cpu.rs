@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{bus::Bus, cpu::instructions::{and::AND, beq::BEQ, bne::BNE, bpl::BPL, cld::CLD, dec::DEC, dey::DEY, jmp::JMP, jsr::JSR, lda::LDA, ldx::LDX, ldy::LDY, pha::PHA, sei::SEI, sta::STA, sty::STY, txs::TXS}, mochanes::Region};
+use crate::{bus::Bus, cpu::instructions::{and::AND, beq::BEQ, bne::BNE, bpl::BPL, cld::CLD, dec::DEC, dey::DEY, jmp::JMP, jsr::JSR, lda::LDA, ldx::LDX, ldy::LDY, pha::PHA, sei::SEI, sta::STA, sty::STY, txa::TXA, txs::TXS}, mochanes::Region};
 
 pub struct Cpu {
     // Register Utama
@@ -99,6 +99,9 @@ impl Cpu {
             0x85 => {
                 STA::zeropage(self, bus)
             }
+            0x8A => {
+                TXA::transfer(self)
+            }
             0xD8 => {
                 CLD::clear(self)
             }
@@ -151,7 +154,7 @@ impl Cpu {
                 BEQ::branch(self, bus)
             }
             _ => {
-                panic!("Opcode {:02x} belum diimplementasi",opcode);
+                panic!("Opcode {:02x} belum diimplementasi", opcode);
             }
         }
     }
