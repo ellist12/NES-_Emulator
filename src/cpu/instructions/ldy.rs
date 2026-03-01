@@ -3,7 +3,7 @@ use crate::{bus::Bus, cpu::cpu::Cpu};
 pub struct LDY;
 
 impl LDY {
-    pub fn immideate(cpu: &mut Cpu, bus: &mut Bus) -> u16 {
+    pub fn immedeate(cpu: &mut Cpu, bus: &mut Bus) -> u16 {
         // LDY Immideate: Ambil byte berikutnya, taruh di register Y
         // Ukuran Opcode : 2 byte
         // Jumlah cycle : 2

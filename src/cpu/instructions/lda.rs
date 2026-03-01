@@ -4,7 +4,7 @@ use crate::{bus::Bus, cpu::cpu::Cpu};
 pub struct LDA;
 
 impl LDA {
-    pub fn immideate(cpu: &mut Cpu, bus: &mut Bus) -> u16 {
+    pub fn immedeate(cpu: &mut Cpu, bus: &mut Bus) -> u16 {
         // LDA Immediate: Ambil byte berikutnya, taruh di register A
         // Ukuran Opcode : 2 byte
         // Jumlah cycle : 2

@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{bus::Bus, cpu::instructions::{bpl::BPL, jmp::JMP, jsr::JSR, lda::LDA, ldy::LDY, pha::PHA, sei::SEI}, mochanes::Region};
+use crate::{bus::Bus, cpu::instructions::{bpl::BPL, jmp::JMP, jsr::JSR, lda::LDA, ldy::LDY, pha::PHA, sei::SEI, sta::STA}, mochanes::Region};
 
 pub struct Cpu {
     // Register Utama
@@ -97,19 +97,7 @@ impl Cpu {
                 SEI::set(self)
             }
             0x85 => {
-                // STA (Store Accumulator) Zero Page
-                // Store nilai dari register A, ke ram bagian ZEROPAGE yang addressnya di specify di byte berikutnya
-                // Ukuran Opcode : 2 byte
-                // Jumlah cycle : 3 cycle
-                // Contoh kode assembly : STA $02
-                // Artinya : simpan nilai dari register A, ke bagian ram ZEROPAGE dengan address $02 (simpan ke $0002)
-                let param = bus.read(self.pc);
-                self.pc = self.pc.wrapping_add(1);
-                let addr = param as u16;
-                println!("STA ${:x}", param);
-                bus.write(addr, self.a);
-                self.cycle += 3;
-                3
+                STA::zeropage(self, bus)
             }
             0xD8 => {
                 // CLD (Clear Decimal Mode)
@@ -216,7 +204,7 @@ impl Cpu {
                 4
             }
             0xA0 => {
-                LDY::immideate(self, bus)
+                LDY::immedeate(self, bus)
             }
             0xA2 => {
                 // LDX Immideate: Ambil byte berikutnya, taruh di register X
@@ -239,7 +227,7 @@ impl Cpu {
                 LDA::zeropage(self, bus)
             }
             0xA9 => {
-                LDA::immideate(self, bus)
+                LDA::immedeate(self, bus)
             }
             0xAC => {
                 LDY::absolute(self, bus)
