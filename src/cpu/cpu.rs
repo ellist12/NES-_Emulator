@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{bus::Bus, cpu::instructions::{bpl::BPL, jmp::JMP, jsr::JSR, lda::LDA, ldy::LDY, pha::PHA}, mochanes::Region};
+use crate::{bus::Bus, cpu::instructions::{bpl::BPL, jmp::JMP, jsr::JSR, lda::LDA, ldy::LDY, pha::PHA, sei::SEI}, mochanes::Region};
 
 pub struct Cpu {
     // Register Utama
@@ -94,13 +94,7 @@ impl Cpu {
                 JMP::jump(self, bus)
             }
             0x78 => {
-                // SEI (Set Interrupt Flag)
-                // Nyalakan bit flag interrupt di status (0b00000100)
-                // Jumlah cycle : 2
-                println!("SEI");
-                self.status = self.status | 0b00000100;
-                self.cycle += 2;
-                2
+                SEI::set(self)
             }
             0x85 => {
                 // STA (Store Accumulator) Zero Page
