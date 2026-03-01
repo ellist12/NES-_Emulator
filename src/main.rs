@@ -1,6 +1,4 @@
-use std::io;
-
-use crate::{bus::Bus, cpu::Cpu, mochanes::MochaNES};
+use crate:: mochanes::MochaNES;
 
 mod cpu;
 mod bus;

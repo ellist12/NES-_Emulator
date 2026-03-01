@@ -1,7 +1,8 @@
-use std::{fs::File, io};
+use std::{fs::File};
 use std::io::Read;
 
-use crate::{bus::Bus, cartridge::Cartridge, cpu::Cpu};
+use crate::cpu::cpu::Cpu;
+use crate::{bus::Bus, cartridge::Cartridge};
 
 #[derive(PartialEq, Clone)]
 pub enum Region {
