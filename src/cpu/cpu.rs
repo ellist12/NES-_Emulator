@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{bus::Bus, cpu::instructions::{bpl::BPL, lda::LDA, ldy::LDY}, mochanes::Region};
+use crate::{bus::Bus, cpu::instructions::{bpl::BPL, jsr::JSR, lda::LDA, ldy::LDY}, mochanes::Region};
 
 pub struct Cpu {
     // Register Utama
@@ -85,32 +85,7 @@ impl Cpu {
                 BPL::branch(self, bus)
             }
             0x20 => {
-                // JSR (Jump to subroutine)
-                // CPU Pergi ke alamat lain untuk menjalankan kode, tapi ia "mencatat" alamat asalnya agar nanti bisa pulang menggunakan
-                // instruksi RTS (Return from Subsoutine)
-                // Ukuran opcode : 3 byte
-                // Jumlah cycle : 6 cycle
-                // Contoh kode assembly : JSR $1000 [20 00 10]
-                // Artinya : Pergi ke alamat $1000, tapi catat alamat asal di stack agar bisa balik
-                let lo = bus.read(self.pc) as u16;
-                self.pc = self.pc.wrapping_add(1);
-                let hi = bus.read(self.pc) as u16;
-                let addr = (hi << 8)  | lo;
-                self.pc = self.pc.wrapping_add(1);
-
-                println!("JSR ${:x}", addr);
-
-                let pc_lo = ((self.pc - 1) & 0x00FF) as u8;
-                let pc_hi = ((self.pc - 1) >> 8) as u8;
-                bus.write(0x0100 + self.sp as u16, pc_hi);
-                self.sp = self.sp.wrapping_sub(1);
-                bus.write(0x0100 + self.sp as u16, pc_lo);
-                self.sp = self.sp.wrapping_sub(1);
-
-                self.pc = addr;
-                self.cycle += 6;
-
-                6
+                JSR::jump(self, bus)
             }
             0x48 => {
                 // PHA (Push accumulator on stack)
