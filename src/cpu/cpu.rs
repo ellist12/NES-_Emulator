@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{bus::Bus, cpu::instructions::{and::AND, bpl::BPL, cld::CLD, dey::DEY, jmp::JMP, jsr::JSR, lda::LDA, ldy::LDY, pha::PHA, sei::SEI, sta::STA, txs::TXS}, mochanes::Region};
+use crate::{bus::Bus, cpu::instructions::{and::AND, bpl::BPL, cld::CLD, dey::DEY, jmp::JMP, jsr::JSR, lda::LDA, ldx::LDX, ldy::LDY, pha::PHA, sei::SEI, sta::STA, sty::STY, txs::TXS}, mochanes::Region};
 
 pub struct Cpu {
     // Register Utama
@@ -115,18 +115,7 @@ impl Cpu {
                 TXS::transfer(self)
             }
             0x84 => {
-                // STY Zeropage: setor data ke bagian ram ZEROPAGE di alamat yang di specify di 1 byte berikutnya
-                //               bagian ZEROPAGE di ram punya rentang dari $0000 - $00FF
-                // Ukuran Opcode : 2 byte
-                // Jumlah cycle : 3
-                // Contoh kode assembly : STY $10
-                // Artinya: Tulis value yang ada di register Y, ke address $10 di ram bagian ZEROPAGE ($0010)
-                let addr = bus.read(self.pc);
-                self.pc = self.pc.wrapping_add(1);
-                bus.write(addr as u16, self.y);
-                println!("STY ${:x}", addr);
-                self.cycle += 3;
-                3
+                STY::zeropage(self, bus)
             }
             0x8D => {
                 STA::absolute(self, bus)
@@ -135,18 +124,7 @@ impl Cpu {
                 LDY::immedeate(self, bus)
             }
             0xA2 => {
-                // LDX Immideate: Ambil byte berikutnya, taruh di register X
-                // Ukuran Opcode : 2 byte
-                // Jumlah cycle : 2
-                // Contoh kode assembly : LDX #$10 [A2 10]
-                // Artinya : ambil angka di byte berikutnya (10), dan masukkan ke register X
-                let param = bus.read(self.pc);
-                self.pc = self.pc.wrapping_add(1);
-                self.x = param;
-                println!("LDX #${:x}", param);
-                self.update_zero_and_negative_flags(self.x);
-                self.cycle += 2;
-                2
+                LDX::immediate(self, bus)
             }
             0xA4 => {
                 LDY::zeropage(self, bus)

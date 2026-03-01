@@ -10,3 +10,5 @@ pub mod dey;
 pub mod cld;
 pub mod and;
 pub mod txs;
+pub mod sty;
+pub mod ldx;
