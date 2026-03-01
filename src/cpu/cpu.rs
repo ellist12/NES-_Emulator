@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{bus::Bus, cpu::instructions::{bpl::BPL, jsr::JSR, lda::LDA, ldy::LDY}, mochanes::Region};
+use crate::{bus::Bus, cpu::instructions::{bpl::BPL, jsr::JSR, lda::LDA, ldy::LDY, pha::PHA}, mochanes::Region};
 
 pub struct Cpu {
     // Register Utama
@@ -88,18 +88,7 @@ impl Cpu {
                 JSR::jump(self, bus)
             }
             0x48 => {
-                // PHA (Push accumulator on stack)
-                // Menyimpan sementara nilai dari register A ke stack, sehingga accumulator bisa digunakan untuk
-                // keperluan lain tanpa kehilangan nilai awalnya
-                // Ukuran opcode : 1 byte
-                // Jumlah cycle : 3 cycle
-                // Contoh kode assembly : PHA
-                // Artinya : Push nilai register A ke stack
-                println!("PHA");
-                bus.write(0x0100 + self.sp as u16, self.a);
-                self.sp = self.sp.wrapping_sub(1);
-                self.cycle += 3;
-                3
+                PHA::push(self, bus)
             }
             0x4c => {
                 // JMP (Jump)
