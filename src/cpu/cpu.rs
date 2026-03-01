@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{bus::Bus, cpu::instructions::{bpl::BPL, jsr::JSR, lda::LDA, ldy::LDY, pha::PHA}, mochanes::Region};
+use crate::{bus::Bus, cpu::instructions::{bpl::BPL, jmp::JMP, jsr::JSR, lda::LDA, ldy::LDY, pha::PHA}, mochanes::Region};
 
 pub struct Cpu {
     // Register Utama
@@ -91,20 +91,7 @@ impl Cpu {
                 PHA::push(self, bus)
             }
             0x4c => {
-                // JMP (Jump)
-                // Melakukan jump (mengganti nilai program counter) ke value yang ditetapkan di 2 byte berikutnya.
-                // Opcode ini mirip seperti JSR, tapi tidak menyimpan lokasi pc awal di stack
-                // Ukuran opcode : 3 byte
-                // Jumlah cycle : 3
-                // Contoh kode assembly : JMP $0020
-                // Artinya : Jump ke address $0020
-                let lo = bus.read(self.pc) as u16;
-                let hi = bus.read(self.pc.wrapping_add(1)) as u16;
-                let addr = (hi << 8) | lo;
-                println!("JMP ${:x}", addr);
-                self.pc = addr;
-                self.cycle += 3;
-                3
+                JMP::jump(self, bus)
             }
             0x78 => {
                 // SEI (Set Interrupt Flag)
