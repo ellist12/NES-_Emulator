@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{bus::Bus, cpu::instructions::{bpl::BPL, cld::CLD, dey::DEY, jmp::JMP, jsr::JSR, lda::LDA, ldy::LDY, pha::PHA, sei::SEI, sta::STA}, mochanes::Region};
+use crate::{bus::Bus, cpu::instructions::{and::AND, bpl::BPL, cld::CLD, dey::DEY, jmp::JMP, jsr::JSR, lda::LDA, ldy::LDY, pha::PHA, sei::SEI, sta::STA}, mochanes::Region};
 
 pub struct Cpu {
     // Register Utama
@@ -103,21 +103,7 @@ impl Cpu {
                 CLD::clear(self)
             }
             0x29 => {
-                // AND Immidiate
-                // Lakukan operasi logic AND antara nilai di register A dan
-                // angka di byte berikutnya, hasilnya dimasukan ke register A
-                // Ukuran Opcode : 2 byte
-                // Jumlah cycle : 2
-                // Contoh kode assembly : AND #$80
-                // Artinya : lakukan operasi biner AND, antara value di register A dan value di byte berikutnya,
-                //           lalu masukkan hasilnya ke register a
-                let param = bus.read(self.pc);
-                println!("AND #${:x}", param);
-                self.pc = self.pc.wrapping_add(1);
-                self.a = self.a & param;
-                self.update_zero_and_negative_flags(self.a);
-                self.cycle += 2;
-                2
+                AND::immediate(self, bus)
             }
             0x88 => {
                 DEY::decrease(self)
