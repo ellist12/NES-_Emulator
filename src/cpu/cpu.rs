@@ -187,21 +187,7 @@ impl Cpu {
                 3
             }
             0x8D => {
-                // STA Absolute: Tulis nilai dari register A, ke alamat memori yang ditentukan
-                // Ukuran Opcode: 3 byte,
-                // Jumlah cycle : 4
-                // Contoh kode assembly : STA $2000 [8D 00 20]
-                // Artinya: tulis yang ada di register A ke address 2000
-                let lo = bus.read(self.pc) as u16;
-                self.pc = self.pc.wrapping_add(1);
-                let hi = bus.read(self.pc) as u16;
-                self.pc = self.pc.wrapping_add(1);
-
-                let addr = (hi << 8) | lo;
-                println!("STA ${:x}", addr);
-                bus.write(addr, self.a);
-                self.cycle += 4;
-                4
+                STA::absolute(self, bus)
             }
             0xA0 => {
                 LDY::immedeate(self, bus)
