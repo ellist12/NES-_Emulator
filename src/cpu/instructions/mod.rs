@@ -12,3 +12,5 @@ pub mod and;
 pub mod txs;
 pub mod sty;
 pub mod ldx;
+pub mod dec;
+pub mod beq;

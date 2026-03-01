@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{bus::Bus, cpu::instructions::{and::AND, bpl::BPL, cld::CLD, dey::DEY, jmp::JMP, jsr::JSR, lda::LDA, ldx::LDX, ldy::LDY, pha::PHA, sei::SEI, sta::STA, sty::STY, txs::TXS}, mochanes::Region};
+use crate::{bus::Bus, cpu::instructions::{and::AND, beq::BEQ, bpl::BPL, cld::CLD, dec::DEC, dey::DEY, jmp::JMP, jsr::JSR, lda::LDA, ldx::LDX, ldy::LDY, pha::PHA, sei::SEI, sta::STA, sty::STY, txs::TXS}, mochanes::Region};
 
 pub struct Cpu {
     // Register Utama
@@ -142,20 +142,7 @@ impl Cpu {
                 LDA::absolute(self, bus)
             }
             0xC6 => {
-                // DEC (Decrement Memory) Zero Page
-                // Ambil nilai di sebuah alamat memory ZEROPAGE yang di specify di byte berikutnya setelah opcode, menguranginya dengan 1,
-                // menyimpan kembali hasilnya ke alamat tersebut
-                // Ukuran Opcode : 2 byte
-                // Jumlah cycle : 5 cycle
-                let param = bus.read(self.pc);
-                println!("DEC ${:x}", param);
-                self.pc = self.pc.wrapping_add(1);
-                let old_data = bus.read(param as u16);
-                let new_data = old_data.wrapping_sub(1);
-                bus.write(param as u16, new_data);
-                self.update_zero_and_negative_flags(new_data);
-                self.cycle += 5;
-                5
+                DEC::zeropage(self, bus)
             }
             0xD0 => {
                 // BNE (Branch if Not Equal)
@@ -187,34 +174,7 @@ impl Cpu {
                 cycle
             }
             0xF0 => {
-                // BEQ (Branch if Equal/ Branch if Zero)
-                // Melompat ke baris kode lain jika hasil operasi sebelumnya adalah 0, jumlah lompatan tergantung dengan 1 byte berikutnya.
-                // Untuk BEQ, angka di 1 byte berikutnya harus kita konversi dulu menjadi signed integer i8 sebelum kita operasikan
-                // Ukuran Opcode : 2 byte
-                // Jumlah cycle :
-                //      1. 2 jika kondisi tidak terpenuhi
-                //      2. 3 jika kondisi terpenuhi dan tidak melewati *page boundary*
-                //      3. 4 jika kondisi terpenuhi dan melewati *page_boundary*
-                // Contoh kode assembly : BEQ $05
-                // Artinya : Jika bit flag zero di register status == 1, lompat 5 byte kedepan
-                let bytes_to_jump = bus.read(self.pc);
-                println!("BEQ {:x}", bytes_to_jump);
-                self.pc = self.pc.wrapping_add(1);
-                let mut cycle = 2;
-
-                if (self.status & 0b00000010) != 0 {
-                    cycle += 1;
-                    let offset = bytes_to_jump as i8;
-                    let old_pc = self.pc;
-                    let new_pc = self.pc.wrapping_add_signed(offset as i16);
-                    if (old_pc & 0xFF00) != (new_pc & 0xFF00) {
-                        // Terjadi page crossing, tambah 1 cycle
-                        cycle += 1;
-                    }
-                    self.pc = new_pc;
-                }
-                self.cycle += cycle;
-                cycle
+                BEQ::branch(self, bus)
             }
             _ => {
                 panic!("Opcode {:02x} belum diimplementasi",opcode);
