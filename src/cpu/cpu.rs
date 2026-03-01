@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{bus::Bus, cpu::instructions::{bpl::BPL, dey::DEY, jmp::JMP, jsr::JSR, lda::LDA, ldy::LDY, pha::PHA, sei::SEI, sta::STA}, mochanes::Region};
+use crate::{bus::Bus, cpu::instructions::{bpl::BPL, cld::CLD, dey::DEY, jmp::JMP, jsr::JSR, lda::LDA, ldy::LDY, pha::PHA, sei::SEI, sta::STA}, mochanes::Region};
 
 pub struct Cpu {
     // Register Utama
@@ -100,13 +100,7 @@ impl Cpu {
                 STA::zeropage(self, bus)
             }
             0xD8 => {
-                // CLD (Clear Decimal Mode)
-                // Nyalakan bit flag decimal mode di status (0b00001000)
-                // Jumlah cycle : 2
-                println!("CLD");
-                self.status = self.status | 0b00001000;
-                self.cycle += 2;
-                2
+                CLD::clear(self)
             }
             0x29 => {
                 // AND Immidiate

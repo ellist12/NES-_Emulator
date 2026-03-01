@@ -7,3 +7,4 @@ pub mod jmp;
 pub mod sei;
 pub mod sta;
 pub mod dey;
+pub mod cld;
