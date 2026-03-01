@@ -7,6 +7,8 @@ impl TXA {
     // Pindahkan dan salin nilai di register x ke register a
     // Ukuran Opcode : 1 byte
     // Jumlah cycle : 2 cycle
+    // Contoh kode assembly : TXA [8a]
+    // Artinya : salin nilai dari register x ke register a
     pub fn transfer(cpu: &mut Cpu) -> u16 {
         cpu.a = cpu.x;
         cpu.update_zero_and_negative_flags(cpu.a);

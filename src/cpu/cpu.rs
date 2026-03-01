@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{bus::Bus, cpu::instructions::{and::AND, beq::BEQ, bne::BNE, bpl::BPL, cld::CLD, dec::DEC, dey::DEY, jmp::JMP, jsr::JSR, lda::LDA, ldx::LDX, ldy::LDY, pha::PHA, sei::SEI, sta::STA, sty::STY, txa::TXA, txs::TXS}, mochanes::Region};
+use crate::{bus::Bus, cpu::instructions::{and::AND, beq::BEQ, bne::BNE, bpl::BPL, cld::CLD, dec::DEC, dey::DEY, jmp::JMP, jsr::JSR, lda::LDA, ldx::LDX, ldy::LDY, pha::PHA, sei::SEI, sta::STA, sty::STY, txa::TXA, txs::TXS, tya::TYA}, mochanes::Region};
 
 pub struct Cpu {
     // Register Utama
@@ -113,6 +113,9 @@ impl Cpu {
             }
             0x91 => {
                 STA::indirect_y(self, bus)
+            }
+            0x98 => {
+                TYA::transfer(self)
             }
             0x9A => {
                 TXS::transfer(self)

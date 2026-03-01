@@ -16,3 +16,4 @@ pub mod dec;
 pub mod beq;
 pub mod bne;
 pub mod txa;
+pub mod tya;
